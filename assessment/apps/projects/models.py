@@ -21,12 +21,12 @@ tasks and only it’s owner will be able to edit it and it’s tasks). The progr
 the completion percentage of the tasks of the project and will be automatically
 updated (Using any calculation algorithm of your choice).'''
 
-class Projects(models.Model):
+class Project(models.Model):
 
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
-    description = models.CharField(max_length=200)
+    description = models.CharField(max_length=200 , null= False, blank=True)
     progress = models.IntegerField()
     finish_date = models.DateField()
     is_public = models.BooleanField()

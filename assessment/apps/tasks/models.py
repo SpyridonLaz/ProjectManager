@@ -1,6 +1,6 @@
 from django.db import models
 
-from assessment.apps.projects.models import Projects
+from assessment.apps.projects.models import Project
 
 # Create your models here.
 '''
@@ -12,12 +12,12 @@ used for the logical grouping of tasks under a project and will be passed option
 a query parameter on the task read operations.'''
 
 
-class Tasks(models.Model):
+class Task(models.Model):
 
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=100)
-    description = models.CharField(max_length=200)
-    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    description = models.CharField(max_length=200 , null= False, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     progress = models.IntegerField()
     finish_date = models.DateField()
 
@@ -25,11 +25,11 @@ class Tasks(models.Model):
         return self.title
 
 
-class Tags(models.Model):
+class Tag(models.Model):
 
-    id = models.AutoField(primary_key=True)
     tag = models.CharField(max_length=100)
-    task = models.ForeignKey(Tasks, on_delete=models.CASCADE)
+    # ManyToMany instead of through model
+    tasks = models.ManyToManyField(Task,related_name='tags')
 
     def __str__(self):
         return self.tag

@@ -13,12 +13,12 @@ import os
 from pathlib import Path
 from decouple import config
 from django.core.cache.backends.redis import RedisCache
+from redis_cache import cache
 
 from assessment import apps
-from assessment.apps.tasks import views
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(os.path.abspath(__file__)).parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -26,11 +26,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECURITY WARNING: SECRET_KEY should be set as an environment variable
-
+print(config("SECRET_KEY"))
 SECRET_KEY = config("SECRET_KEY")
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
@@ -44,26 +43,30 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'redis_cache',
+    'django_keycloak.apps.KeycloakAppConfig',
     'assessment.apps.projects',
     'assessment.apps.tasks',
-    'rest_framework',
-    'django_redis',
-    'django_keycloak.apps.KeycloakAppConfig',
+    'assessment.apps.users',
 
 ]
 
+
+
+
+AAUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'django_keycloak.auth.backends.KeycloakAuthorizationCodeBackend',
+
+)
 
 
 LOGIN_URL = 'keycloak_login'
-
-
-
-AUTHENTICATION_BACKENDS = [
-
-    'django_keycloak.auth.backends.KeycloakAuthorizationCodeBackend',
-]
+KEYCLOAK_OIDC_PROFILE_MODEL = 'django_keycloak.OpenIdConnectProfile'
 
 MIDDLEWARE = [
+    'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -72,7 +75,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_keycloak.middleware.BaseKeycloakMiddleware',
-
+    'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'assessment.urls'
@@ -82,7 +85,7 @@ ROOT_URLCONF = 'assessment.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
+        'DIRS': [BASE_DIR / 'templates',]
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -158,11 +161,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CACHES = {
     "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient"
-        },
-        "KEY_PREFIX": "example"
+        "BACKEND": "redis_cache.RedisCache",
+        "LOCATION": "/var/run/redis/redis-server.sock",
     }
 }
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'

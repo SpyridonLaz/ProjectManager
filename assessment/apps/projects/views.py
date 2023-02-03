@@ -17,11 +17,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Project.objects.filter(user=user)
+        return self.queryset.filter(user=user )
+
+    def get_object(self):
+
+        queryset = self.get_queryset()
+        obj = queryset.get(pk=self.kwargs['pk'])
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
+
+
 

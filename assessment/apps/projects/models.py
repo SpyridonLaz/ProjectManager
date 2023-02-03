@@ -1,16 +1,9 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-
+from assessment.apps.users.models import User
 # Create your models here.
 
 
-
-class User(models.Model):
-    name = models.CharField(max_length=200)
-    email = models.CharField(max_length=200)
-    password = models.CharField(max_length=200)
-
-    def __str__(self):
-        return self.name
 
 
 
@@ -21,15 +14,25 @@ tasks and only it’s owner will be able to edit it and it’s tasks). The progr
 the completion percentage of the tasks of the project and will be automatically
 updated (Using any calculation algorithm of your choice).'''
 
+
+class Status(models.TextChoices):
+
+    IN_PROGRESS = "1", "In Progress"
+    CANCELED = "2", "Canceled"
+    COMPLETED = "3", "Completed"
+    INCOMPLETE = "4", "Incomplete"
+
+
 class Project(models.Model):
 
-    id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.CharField(max_length=200 , null= False, blank=True)
-    progress = models.IntegerField()
-    finish_date = models.DateField()
-    is_public = models.BooleanField()
+    progress =    models.PositiveSmallIntegerField( default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    finish_date = models.DateTimeField()
+    status = models.SmallIntegerField(choices=Status.choices, default=Status.IN_PROGRESS)
+    is_public = models.BooleanField(default=False)
+
 
     def __str__(self):
         return self.title

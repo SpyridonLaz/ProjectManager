@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from assessment.apps.projects.models import Project
+from assessment.apps.projects.models import Project, Status
 
 
 class ProjectSerializer(serializers.ModelSerializer):

@@ -22,8 +22,6 @@ from assessment.apps.tasks import urls as tasks
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Keycloak urls
-    path('keycloak/', include('django_keycloak.urls')),
     path('', include(projects)),
     path('', include(tasks)),
 

@@ -1,6 +1,9 @@
+from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from assessment.apps.users.models import User
+
+
+#from assessment.apps.users.models import User
 # Create your models here.
 
 
@@ -27,8 +30,14 @@ class Project(models.Model):
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
-    description = models.CharField(max_length=200 , null= False, blank=True)
-    progress =    models.PositiveSmallIntegerField( default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    description = models.CharField(max_length=200 ,
+                                   null= False,
+                                   blank=True)
+    progress =    models.DecimalField(max_digits=5,
+                                      decimal_places=2,
+                                      default=0,
+                                      )
+
     finish_date = models.DateTimeField()
     status = models.SmallIntegerField(choices=Status.choices, default=Status.IN_PROGRESS)
     is_public = models.BooleanField(default=False)

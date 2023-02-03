@@ -21,10 +21,9 @@ from assessment.apps.tasks import urls as tasks
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
+    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('', include(projects)),
     path('', include(tasks)),
-
 
 ]
 

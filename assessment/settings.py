@@ -46,12 +46,15 @@ INSTALLED_APPS = [
 
     'assessment.apps.projects',
     'assessment.apps.tasks',
-    'assessment.apps.users',
+
 
 ]
 
 AAUTHENTICATION_BACKENDS = (
+    'oauth2_provider.backends.OAuth2Backend',
+    # Uncomment following if you want to access the admin
     'django.contrib.auth.backends.ModelBackend',
+
 
 )
 
@@ -65,8 +68,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
 
+    'corsheaders.middleware.CorsMiddleware',
     # keep this last
     'django.middleware.cache.FetchFromCacheMiddleware',
 ]
@@ -94,10 +98,13 @@ TEMPLATES = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+
+
     ),
 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
+
     )
 }
 

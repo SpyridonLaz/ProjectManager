@@ -16,11 +16,7 @@ class Tag(models.Model):
      as a query parameter on the task read operations.
     """
     tag = models.CharField(unique=True, max_length=50)
-    # ManyToMany instead of through model
-
-    def __str__(self):
-        return self.tag
-
+    tasks = models.ManyToManyField('Task', related_name='tags')
 
 class Task(models.Model):
     """
@@ -33,18 +29,22 @@ class Task(models.Model):
     a query parameter on the task read operations.
 
     """
-    title = models.CharField(max_length=100)
-    description = models.CharField(max_length=200, null=False, blank=True)
+    title = models.CharField(max_length=200)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    description = models.CharField(max_length=200 ,
+                                   null= False,
+                                   blank=True)
+    progress =    models.DecimalField(max_digits=5,
+                                      decimal_places=2,
+                                      default=0,
+                                      )
 
-    progress =    models.PositiveSmallIntegerField( default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     # if progress == 100, task is finished
-    # new progress > progress
+    # new progress value > previous progress value
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.IN_PROGRESS)
     #todo add validation for 0-100
-    finish_date = models.DateField() #todo not later than project end date
+    finish_date = models.DateTimeField() #todo not later than project end date
     finished = models.BooleanField(default=False )
-    tags = models.ManyToManyField(Tag, related_name='tags' , blank=True)
 
     def __str__(self):
         return self.title

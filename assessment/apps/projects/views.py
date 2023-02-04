@@ -1,3 +1,7 @@
+import json
+import re
+
+from django.core import serializers
 from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import viewsets
@@ -8,8 +12,7 @@ from assessment.apps.projects.models import Project
 from assessment.apps.projects.serializers import ProjectSerializer
 
 from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
-
-
+from oauth2_provider.models import AccessToken
 # Create your project views here.
 
 
@@ -40,8 +43,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
   #  def perform_update(self, serializer):
      #   serializer.save(user=self.request.user)
 
+    def check_object_permissions(self, request, obj):
+        """ get vs check permissions """
+        pass
 
 
     def list(self, request, *args, **kwargs):
-        return Response(request.user,request.user.id,request.user.username,request.user.email)
-
+        app_tk = request.META["HTTP_AUTHORIZATION"]
+        app_tk = re.sub(r'Bearer ', '', app_tk)
+        return Response("SAD",)#headers={'Cache-Control': 'max-age=0',})

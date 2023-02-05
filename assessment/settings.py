@@ -16,21 +16,23 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(os.path.abspath(__file__)).parent
 
+with Path(BASE_DIR.parent, '.oidc.key').open('rb') as f:
+    from Crypto.PublicKey import RSA
 
-
+    private_key = RSA.import_key(f.read())
+    os.environ['OIDC_RSA_PRIVATE_KEY'] = repr(private_key)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECURITY WARNING: SECRET_KEY should be set as an environment variable
-print(config("SECRET_KEY"))
 SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
-LOGIN_URL='/admin/login/'
+LOGIN_URL = '/admin/login/'
 # Application definition
 
 INSTALLED_APPS = [
@@ -57,8 +59,8 @@ AUTHENTICATION_BACKENDS = (
 )
 
 MIDDLEWARE = [
-    #'django.middleware.cache.UpdateCacheMiddleware',
-    #keep the above first
+    # 'django.middleware.cache.UpdateCacheMiddleware',
+    # keep the above first
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -69,7 +71,7 @@ MIDDLEWARE = [
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     # keep this last
-    #'django.middleware.cache.FetchFromCacheMiddleware',
+    # 'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -79,8 +81,7 @@ ROOT_URLCONF = 'assessment.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates', ]
-        ,
+        'DIRS': [BASE_DIR / 'templates', ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -191,7 +192,7 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/1",
-        #"LOCATION": "redis://{user}{pwd}@localhost:6379/1".format(
+        # "LOCATION": "redis://{user}{pwd}@localhost:6379/1".format(
         #    user=config('REDIS_USER'), pwd=":" + config('REDIS_PASSWORD', '') if config('REDIS_USER') else ""),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",

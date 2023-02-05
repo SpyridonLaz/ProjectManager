@@ -1,5 +1,6 @@
+from rest_framework.validators import UniqueValidator
 
-from assessment.apps.manager.models import Project, Task,Status
+from assessment.apps.manager.models import Project, Task,  Tag
 
 from datetime import datetime
 
@@ -8,20 +9,19 @@ from rest_framework import serializers
 
 
 
-
 class ProjectSerializer(serializers.ModelSerializer):
-    progress = serializers.DecimalField(max_digits=5,
+    progress = serializers.DecimalField(max_digits=3,
                                         decimal_places=2,
-
-                                        validators=[MinValueValidator(0), MaxValueValidator(100)])
+                                        validators=[MinValueValidator(0), MaxValueValidator(1)])
+    due_date = serializers.DateTimeField()
 
     class Meta:
         model = Project
-        fields = [ 'owner', 'title',
-                   'description', 'due_date',
-                   'is_public', 'progress' ]
+        fields = ['id', 'owner', 'title', 'description', 'due_date',
+                  'is_public', 'progress']
         extra_kwargs = {
-            'status': {'read_only': True}
+            'progress': {'read_only': True},
+            'status': {'read_only': True},
         }
 
 
@@ -29,41 +29,68 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 
-
-class Tag(serializers.ModelSerializer):
-
-    class Meta:
-        model = Task
-        fields = ('tag',)
-
 class TaskSerializer(serializers.ModelSerializer):
-    progress = serializers.DecimalField(max_digits=5,
+    title = serializers.CharField(max_length=200,)
+    progress = serializers.DecimalField(max_digits=3,
                                         decimal_places=2,
-                                        validators=[MinValueValidator(0), MaxValueValidator(100)] )
-    lol = serializers.CharField(source='tag', read_only=True)
+                                        validators=[MinValueValidator(0), MaxValueValidator(1)])
+    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
+    tags =  serializers.SlugRelatedField(  slug_field="name", many=True, queryset=Tag.objects.all()  )
+    due_date = serializers.DateTimeField()
     class Meta:
         model = Task
-        fields = ( 'title', 'description', 'project', 'progress', 'due_date', 'tag','lol')
+        fields = ('title', 'description', 'project',
+                  'progress', 'due_date', 'tags')
+        extra_kwargs = {
+            'status': {'read_only': True},
+        }
+
+    #
+    def to_internal_value(self, data):
+        raw_tags = data.get('tags', [])
+        _t=[]
+        for tag in raw_tags:
+            try:
+                obj = Tag.objects.get(name=tag)
+                _t.append(obj)
+            except Tag.DoesNotExist as e:
+                print(e)
+                obj = Tag.objects.create(name=tag)
+                _t.append(obj)
+            except Exception as e:
+                print(e)
+                continue
+        data['tags'] = _t
+        print(data['tags'])
+        return super(TaskSerializer, self).to_internal_value(data)
+
+    #
+    #
+    # def validate(self, data):
+    #
+    #     _id = self.initial_data['project']
+    #     _obj = Project.objects.get(id=_id)
+    #     TaskOverdueValidator(_obj)(data['due_date'])
+    #     if data['progress'] == 1:
+    #         data['status'] = Status.COMPLETED
+    #
+    #
+    #     return data
+    #
 
 
-    def create(self, validated_data):
-        """  EDW EINAI GIA MANIPULATION
 
-        You should use an object wide validation (validate()),
-        since validate_date will never be called since date is not a field on the serializer.
-
-        """
-
-        if datetime.now().date() > validated_data['due_date'].date():
-            raise serializers.ValidationError("Due date must be in the future")
-        if validated_data['progress'] == 100:
-            validated_data['status'] = Status.COMPLETED
-
-
-
-
-        task = Task.objects.create(**validated_data)
-        return task
-
-
-
+    # def create(self, validated_data):
+    #     """ kai EDW EINAI GIA MANIPULATION
+    #
+    #     You should use an object wide validation (validate()),
+    #     since validate_date will never be called since date is not a field on the serializer.
+    #
+    #     """
+    #     if datetime.now().date() > validated_data['due_date'].date():
+    #         raise serializers.ValidationError("Due date must be a future date.")
+    #     if validated_data['progress'] == 100:
+    #         validated_data['status'] = Status.COMPLETED
+    #
+    #     task = Task.objects.create(**validated_data)
+    #     return task

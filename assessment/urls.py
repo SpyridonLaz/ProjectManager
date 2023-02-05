@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 
-from  assessment.apps.manager.urls import projects_router, tasks_router
+from assessment.apps.manager import urls as manager_urls
+
 """
 ===== oAuth2  ======
     Headers:
@@ -28,9 +29,32 @@ python client
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    path('', include(projects_router.urls)),
-    path('', include(tasks_router.urls)),
+    path('', include(manager_urls)),
 
 ]
 
 
+from django.views.generic import TemplateView
+
+urlpatterns += [
+    # ...
+    # Route TemplateView to serve the ReDoc template.
+    #   * Provide `extra_context` with view name of `SchemaView`.
+    path('redoc/', TemplateView.as_view(
+        template_name='redoc.html',
+        extra_context={'schema_url':'openapi-schema'}
+    ), name='redoc'),
+]
+
+
+from django.views.generic import TemplateView
+
+urlpatterns += [
+    # ...
+    # Route TemplateView to serve Swagger UI template.
+    #   * Provide `extra_context` with view name of `SchemaView`.
+    path('swagger-ui/', TemplateView.as_view(
+        template_name='swagger-ui.html',
+        extra_context={'schema_url':'openapi-schema'}
+    ), name='swagger-ui'),
+]

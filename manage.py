@@ -21,8 +21,4 @@ def main():
 
 if __name__ == '__main__':
 
-    with open('.oidc.key', 'rb') as f:
-        from Crypto.PublicKey import RSA
-        private_key = RSA.import_key(f.read())
-        os.environ['OIDC_RSA_PRIVATE_KEY'] = repr(private_key)
     main()

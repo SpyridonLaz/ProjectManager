@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 
-from  assessment.apps.projects import urls as projects
-from assessment.apps.tasks import urls as tasks
+from  assessment.apps.manager.urls import projects_router, tasks_router
 """
 ===== oAuth2  ======
     Headers:
@@ -29,8 +28,8 @@ python client
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    path('', include(projects)),
-    path('', include(tasks)),
+    path('', include(projects_router.urls)),
+    path('', include(tasks_router.urls)),
 
 ]
 

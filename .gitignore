@@ -1,5 +1,6 @@
 README.md
 /assessment/apps/tasks/migrations/
-/assessment/apps/projects/migrations/
+/assessment/apps/manager/migrations/
 /.oidc.key
 /.env
+/.oidc.key.pub

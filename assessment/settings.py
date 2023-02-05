@@ -45,12 +45,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
 
-    'assessment.apps.projects',
-    'assessment.apps.tasks',
+    'assessment.apps.manager',
 
 ]
 
-AAUTHENTICATION_BACKENDS = (
+AUTHENTICATION_BACKENDS = (
     'oauth2_provider.backends.OAuth2Backend',
     # Uncomment following if you want to access the admin
     'django.contrib.auth.backends.ModelBackend',

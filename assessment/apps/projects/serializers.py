@@ -15,3 +15,8 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = [ 'owner', 'title',
                    'description', 'due_date',
                    'is_public', 'progress' ]
+        extra_kwargs = {
+            'status': {'read_only': True}
+        }
+
+

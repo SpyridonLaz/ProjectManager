@@ -1,9 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
+
 from  assessment.apps.projects import urls as projects
 from assessment.apps.tasks import urls as tasks
-
-
 """
 ===== oAuth2  ======
     Headers:

@@ -1,4 +1,5 @@
-assessment/.env
 README.md
 /assessment/apps/tasks/migrations/
 /assessment/apps/projects/migrations/
+/.oidc.key
+/.env

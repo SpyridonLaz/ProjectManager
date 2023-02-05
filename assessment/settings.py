@@ -12,11 +12,12 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 from pathlib import Path
 from decouple import config
-from django.core.cache.backends.redis import RedisCache
-from redis_cache import cache
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(os.path.abspath(__file__)).parent.parent
+BASE_DIR = Path(os.path.abspath(__file__)).parent
+
+
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -29,7 +30,7 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
-
+LOGIN_URL='/admin/login/'
 # Application definition
 
 INSTALLED_APPS = [
@@ -39,14 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'redis_cache',
+    'redis',
     'oauth2_provider',
     'corsheaders',
     'rest_framework',
 
     'assessment.apps.projects',
     'assessment.apps.tasks',
-
 
 ]
 
@@ -55,12 +55,11 @@ AAUTHENTICATION_BACKENDS = (
     # Uncomment following if you want to access the admin
     'django.contrib.auth.backends.ModelBackend',
 
-
 )
 
-
 MIDDLEWARE = [
-    'django.middleware.cache.UpdateCacheMiddleware',
+    #'django.middleware.cache.UpdateCacheMiddleware',
+    #keep the above first
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -69,10 +68,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
-
     'corsheaders.middleware.CorsMiddleware',
     # keep this last
-    'django.middleware.cache.FetchFromCacheMiddleware',
+    #'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -98,20 +96,34 @@ TEMPLATES = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-
-
     ),
-
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-
     )
 }
 
+# OAUTH2_PROVIDER = {
+#     # this is the list of available scopes
+#     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'},
+#     #"PKCE_REQUIRED": False
+#
+# }
+
 OAUTH2_PROVIDER = {
-    # this is the list of available scopes
-    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
+    "OIDC_ENABLED": True,
+    "OIDC_RSA_PRIVATE_KEY": os.environ.get("OIDC_RSA_PRIVATE_KEY"),
+    "ID_TOKEN_EXPIRE_SECONDS": 150,
+    "SCOPES": {
+        "openid": "OpenID Connect scope",
+        'read': 'Read scope',
+        'write': 'Write scope',
+        'groups': 'Access to your groups'
+        # ... any other scopes that you use
+    },
+    # ... any other settings you want
 }
+OIDC_RSA_PRIVATE_KEY = config("OIDC_RSA_PRIVATE_KEY")
+
 WSGI_APPLICATION = 'assessment.wsgi.application'
 
 # Database
@@ -119,7 +131,7 @@ WSGI_APPLICATION = 'assessment.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': config('DB_ENGINE'),
         'NAME': config('DB_NAME'),
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
@@ -166,12 +178,28 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+#
+# CACHES = {
+#     "default": {
+#         "BACKEND": "redis_cache.RedisCache",
+#         "LOCATION": "/var/run/redis/redis-server.sock",
+#     }
+# }
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
 
 CACHES = {
     "default": {
-        "BACKEND": "redis_cache.RedisCache",
-        "LOCATION": "/var/run/redis/redis-server.sock",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        #"LOCATION": "redis://{user}{pwd}@localhost:6379/1".format(
+        #    user=config('REDIS_USER'), pwd=":" + config('REDIS_PASSWORD', '') if config('REDIS_USER') else ""),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
     }
 }
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+CACHE_TTL = 60 * 1

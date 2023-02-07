@@ -1,23 +1,18 @@
-from datetime import datetime
 
 from django.contrib.auth.models import User, Group
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
-
-# from assessment.apps.users.models import User
 # Create your models here.
 
 
 class Status(models.IntegerChoices):
-
-    IN_PROGRESS = 1, _("In Progress") # on time scheule
+    IN_PROGRESS = 1, _("In Progress")  # on time scheule
     CANCELED = 2, _("Canceled")  # canceled by owner
-    COMPLETED =  3, _("Completed") # completed tasks
-    EXPIRED = 4, _("Expired") # incompleted tasks
+    COMPLETED = 3, _("Completed")  # completed tasks
+    EXPIRED = 4, _("Expired")  # incompleted tasks
 
 
 class Project(models.Model):
@@ -45,12 +40,10 @@ class Project(models.Model):
                                    default=0,
                                    validators=[MinValueValidator(0), MaxValueValidator(1)]
                                    )
-    due_date = models.DateTimeField(null=False,
-                                    default=(timezone.now() + timezone.timedelta(hours=24)),
-
+    due_date = models.DateTimeField(null=False
                                     )
-    status = models.PositiveSmallIntegerField( choices=Status.choices,
-                                               default=Status.IN_PROGRESS)
+    status = models.PositiveSmallIntegerField(choices=Status.choices,
+                                              default=Status.IN_PROGRESS)
     is_public = models.BooleanField(default=False)
 
     def __str__(self):
@@ -79,7 +72,7 @@ class Task(models.Model):
     a task is completed when progress == 100 OR when
     """
     title = models.CharField(max_length=200,
-                             unique=True)
+                             )
     project = models.ForeignKey(Project,
                                 on_delete=models.CASCADE)
     description = models.CharField(max_length=200,
@@ -95,8 +88,9 @@ class Task(models.Model):
     # and conditions
     status = models.PositiveSmallIntegerField(choices=Status.choices,
                                               default=Status.IN_PROGRESS)
-    due_date = models.DateTimeField(null=False     )
-    tags = models.ManyToManyField(Tag,related_name='tasks')
+    due_date = models.DateTimeField(null=False)
+    tags = models.ManyToManyField(Tag, related_name='tasks')
+
 
     def __str__(self):
         return self.title

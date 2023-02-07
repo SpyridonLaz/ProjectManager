@@ -1,16 +1,10 @@
-import json
-import re
-
 from django.utils.decorators import method_decorator
-from django.views import View
 from django.views.decorators.cache import cache_page
-from django.core.cache import cache
-from rest_framework import viewsets, status
+from rest_framework import  status
 from rest_framework.exceptions import ValidationError
-from rest_framework.mixins import UpdateModelMixin, DestroyModelMixin
-from rest_framework.permissions import IsAuthenticated, SAFE_METHODS, AllowAny, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.viewsets import  ModelViewSet
 
 from assessment import settings
 from assessment.apps.manager.models import Project, Task

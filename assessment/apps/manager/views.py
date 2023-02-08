@@ -8,7 +8,7 @@ from rest_framework.viewsets import  ModelViewSet
 
 from assessment import settings
 from assessment.apps.manager.models import Project, Task
-from assessment.apps.manager.permissions import IsProjectOwner, ViewIsPublic, ObjectStatus
+from assessment.apps.manager.permissions import IsProjectOwner, IsPublic, ObjectStatus
 from assessment.apps.manager.serializers import ProjectSerializer, TaskSerializer
 from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
 
@@ -33,19 +33,12 @@ class ProjectViewSet(ModelViewSet):
     def get_permissions(self):
         self.permission_classes = [IsAuthenticated, TokenHasReadWriteScope]
         if self.request.method in SAFE_METHODS:
-            self.permission_classes += [ViewIsPublic | IsProjectOwner, ]
+            self.permission_classes += [IsPublic | IsProjectOwner, ]
         else:
             self.permission_classes += [IsProjectOwner,ObjectStatus, ]
         return super(ProjectViewSet, self).get_permissions()
 
-    def update(self, request, *args, **kwargs):
-        obj = self.get_object()
-        try:
-            CompleteByExpirationValidator(obj)
-        except ValidationError as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
 
-        return super(ProjectViewSet, self).update(request, *args, **kwargs)
 
 
 class TaskViewSet(ModelViewSet):
@@ -59,7 +52,7 @@ class TaskViewSet(ModelViewSet):
     def get_permissions(self):
         self.permission_classes = [IsAuthenticated, TokenHasReadWriteScope]
         if self.request.method in SAFE_METHODS:
-            self.permission_classes += [ViewIsPublic | IsProjectOwner, ]
+            self.permission_classes += [IsPublic | IsProjectOwner, ]
         else:
             self.permission_classes += [IsProjectOwner,ObjectStatus,]
         return super(TaskViewSet, self).get_permissions()

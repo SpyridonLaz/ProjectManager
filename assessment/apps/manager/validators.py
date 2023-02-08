@@ -1,4 +1,3 @@
-from abc import ABC
 from datetime import datetime
 
 from rest_framework.exceptions import ValidationError
@@ -8,18 +7,18 @@ from .models import Project, Task
 
 
 
-class EnsureFutureDateValidator(ABC):
+class EnsureFutureDateValidator:
     """ 1
     Validates that a passed datetime object or string points to the future.
     """
 
-    def __init__(self,value:datetime or int, min_time=None):
-        value = value.timestamp() if isinstance(value, datetime) else value
-        now = min_time or  datetime.now().timestamp()
-        if now >= value.timestamp():
+    def __init__(self,value:datetime, time_now=None):
+        value_stamp = value.timestamp()
+        now = time_now or  datetime.now().timestamp()
+        if now >= value_stamp:
             raise ValidationError(
                 {
-                    'details': 'Only a future datetime is accepted.',
+                    'detail': 'Only a future datetime is accepted.',
                     'invalid_field': value}
             )
 
@@ -97,12 +96,13 @@ class OutOfTimeRangeValidator(EnsureFutureDateValidator):
 
     def __init__(self, value, time=None, days=0, hours=0, mins=0, seconds=0):
         self.gap= time or days*24*60*60 + hours*60*60 + mins*60 + seconds
+        # minimum time in unix
         self.dt_min = int(datetime.now().timestamp()+ self.gap)
 
-        super().__init__(value=self.dt_min)
+        super().__init__(value=value)
 
-        # minimum time in unix
-
+    def is_future(self, value):
+        return EnsureFutureDateValidator(value=value, time_now=self.dt_min)
 
     def __call__(self, value:datetime=None, instance=None,parent=None,):
 
@@ -112,7 +112,7 @@ class OutOfTimeRangeValidator(EnsureFutureDateValidator):
         if parent:
             self.dt_max = parent.due_date.timestamp()
             if not self.dt_min > self.dt_max:
-                raise ValidationError(self.message)
+                raise ValidationError(detail=self.message)
 
 
 

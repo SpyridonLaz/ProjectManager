@@ -16,11 +16,12 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(os.path.abspath(__file__)).parent
 
-with Path(BASE_DIR.parent, '.oidc.key').open('rb') as f:
-    from Crypto.PublicKey import RSA
-
-    private_key = RSA.import_key(f.read())
-    os.environ['OIDC_RSA_PRIVATE_KEY'] = repr(private_key)
+# with Path(BASE_DIR.parent, '.oidc.key').open('rb') as f:
+#     from Crypto.PublicKey import RSA
+#
+#     private_key = RSA.import_key(f.read())
+#     os.environ['OIDC_RSA_PRIVATE_KEY'] = repr(private_key)
+#     print(config('OIDC_RSA_PRIVATE_KEY'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -36,6 +37,9 @@ LOGIN_URL = '/admin/login/'
 # Application definition
 
 INSTALLED_APPS = [
+    'oauth2_provider',
+
+    'sslserver',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,7 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'redis',
-    'oauth2_provider',
     'corsheaders',
     'rest_framework',
 
@@ -102,27 +105,21 @@ REST_FRAMEWORK = {
     )
 }
 
-# OAUTH2_PROVIDER = {
-#     # this is the list of available scopes
-#     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'},
-#     #"PKCE_REQUIRED": False
-#
-# }
+OIDC_RSA_PRIVATE_KEY = config("OIDC_RSA_PRIVATE_KEY")
 
 OAUTH2_PROVIDER = {
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
     "OIDC_ENABLED": True,
-    "OIDC_RSA_PRIVATE_KEY": os.environ.get("OIDC_RSA_PRIVATE_KEY"),
+    "PKCE_REQUIRED": False,    "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
     "ID_TOKEN_EXPIRE_SECONDS": 150,
     "SCOPES": {
         "openid": "OpenID Connect scope",
         'read': 'Read scope',
         'write': 'Write scope',
-        'groups': 'Access to your groups'
         # ... any other scopes that you use
     },
     # ... any other settings you want
 }
-OIDC_RSA_PRIVATE_KEY = config("OIDC_RSA_PRIVATE_KEY")
 
 WSGI_APPLICATION = 'assessment.wsgi.application'
 

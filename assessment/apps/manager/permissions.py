@@ -19,7 +19,7 @@ class IsProjectOwner(IsAuthenticated):
             return False
 
 
-class ViewIsPublic(IsAuthenticated):
+class IsPublic(IsAuthenticated):
     def has_object_permission(self, request, view, obj):
         return obj.is_public
 

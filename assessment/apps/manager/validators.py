@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueTogetherValidator
 
 from assessment.apps.manager.models import Status
 from .models import Project, Task
@@ -37,21 +38,23 @@ class LessThanParentDueDateValidator:
     This validator is used to ensure that the due_date of a **Task**
     is less than the due_date of it's parent Project.
     """
-    message = {"details": "Task's due date cannot be greater than it's Project due date."}
+    message = {"detail": "Task's due date cannot be greater than it's Project due date."}
 
-    def __init__(self, instance:Task, parent):
+    def __init__(self, instance:datetime, parent:Project):
         self.instance = instance
         self.parent = parent
-        if instance.due_date > parent.due_date:
+        print(self.instance, self.parent.due_date)
+        print("DATE",self.instance , self.parent.due_date.month )
+        if instance > parent.due_date:
             raise ValidationError(detail=self.message)
 
 class OutOfTimeRangeValidator(IsFutureDateValidator):
     """
-    This validator is used to validate the due_date of a project or task.
-    It ensures that the due_date is not less than the current time.
-    It calculated the difference between the current time and the due_date
-    and raises a ValidationError if the difference is less than 24 hours.
-    Works in relation to a parent object(if given).
+    It validates that the due_date is not less than the minimum time and also
+    not greater than the due_date of the parent object.
+
+    Works in relation to a parent object, if given, else the maximum time is
+    infinite.
     """
 
 
@@ -91,3 +94,9 @@ class UniqueTitlePerProjectValidator:
                     'detail': 'Title must be unique per project.',
                     'invalid_field': title}
             )
+
+
+class testUTV(UniqueTogetherValidator):
+    def __init__(self, queryset, fields, message=None):
+        super().__init__(queryset, fields, message=None)
+

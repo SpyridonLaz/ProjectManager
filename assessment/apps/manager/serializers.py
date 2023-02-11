@@ -1,6 +1,7 @@
+import datetime
 
-
-from rest_framework.validators import UniqueValidator
+from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 from assessment.apps.manager.models import Project, Task, Tag, Status
 
@@ -15,6 +16,9 @@ from assessment.apps.manager.validators import UniqueTitlePerProjectValidator, I
 class ProjectSerializer(serializers.ModelSerializer):
     """List,Retrieve"""
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
+    due_date = serializers.DateTimeField(validators=[IsFutureDateValidator(days=60), ])
+
+
     class Meta:
         model = Project
         fields = ['id', 'owner', 'title', 'description', 'due_date',
@@ -39,9 +43,9 @@ class ProjectCUDSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'owner', 'title', 'description', 'due_date',
-                  'is_public', 'progress']
+                  'is_public', 'progress','status']
 
-        read_only_fields = ['id', 'owner', 'progress', 'status']
+        read_only_fields = ['id',  'progress', ]
 
 
 
@@ -55,69 +59,86 @@ class TaskSerializer(serializers.ModelSerializer):
     progress = serializers.DecimalField(max_digits=3,
                                         decimal_places=2,
                                         validators=[MinValueValidator(0), MaxValueValidator(1)])
-    title = serializers.CharField(max_length=200,validators=[UniqueValidator(queryset=Task.objects.all(),),])
+    title = serializers.CharField(max_length=200,)
 
     tags =  serializers.SlugRelatedField(  slug_field="name", many=True, queryset=Tag.objects.all()  )
 
     class Meta:
+        depth = 2
         model = Task
-        unique_together = ('project', 'title',)
-        fields = ('project','title','progress', 'description',
-                   'due_date', 'tags')
-        read_only_fields = ['id',]
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=Task.objects.all(),
+                fields=('title', 'project'),
+            )
+        ]
+        fields = ('project','title','tags','progress', 'description',
+                   'due_date', )
+        read_only_fields = ['id','project']
 
-    def to_representation(self, instance):
 
-        data = super().to_representation(instance)
-        data['parent'] = ProjectSerializer(instance.project).data
-        return data
 
-    # def validate_title(self, value):
-    #     self.initial.is_valid()
-    #     UniqueTitlePerProjectValidator(value, self.data['parent'])
-    #     return value
-    #
-    # def validate_due_date(self, value):
-    #     LessThanParentDueDateValidator(value, parent=self.data['parent'])
-    #     return value
+    def validate_due_date(self, value):
+
+        LessThanParentDueDateValidator(value, self.context.get('parent'))
+        return value
+
+
     def to_internal_value(self, data):
         """
         This method is used to create tags if they don't exist.
         The format is a list of strings(tags)
         """
+
+        print("START")
+        #self.parent_obj = self.context.get('parent')
+
         raw_tags = data.get('tags', [])
+        print("RAW",raw_tags)
         _t = []
         for tag in raw_tags:
+            print("TAG",tag)
             try:
-                obj = Tag.objects.get(name=tag)
-                _t.append(obj)
-            except Tag.DoesNotExist as e:
-                obj = Tag.objects.create(name=tag)
-                _t.append(obj)
+                _t.append(Tag.objects.get_or_create(name=tag)[0])
             except Exception as e:
-                continue
+                raise ValidationError({'detail': "Tag PARSER PROBLEM"})
         data['tags'] = _t
+        print(data['tags'])
+        print("DATA",data)
         return super(TaskSerializer, self).to_internal_value(data)
 
     def update(self, instance, validated_data):
-        validated_project = validated_data['project']
 
-        new_task =super().update(instance, validated_data)
+        # validated_data['tags'] =  [Tag.objects.get_or_create(name=tag)[0] for tag in validated_data.get('tags', [])]
+        print("validated_data",validated_data)
+
+        print("validated_data",validated_data)
+        project =  instance.project
+
+
+        new_task =super().update(instance,validated_data,)
         if validated_data['progress'] == 1:
+            print("VALIDATED:  ",project)
             """
             If the task is completed, the parent project: progress , status
             fields are updated accordingly
             """
             validated_data['status'] = Status.COMPLETED
-            completed_tasks = Task.objects.filter(project=validated_data['project'],progress__exact=1).count()
-            total_tasks = Task.objects.filter(project=validated_data['project']).count()
-
-            _prog =  round(completed_tasks/total_tasks,2,)
-            data={'progress': _prog}
+            completed_tasks = Task.objects.filter(project=project,progress__exact=1).count()
+            total_tasks = Task.objects.filter(project=project).count()
+            _prog =  round(completed_tasks+1/total_tasks,2,)
+            print("PROGRESS",_prog)
+            data={}
             if _prog == 1:
                 data['status'] = Status.COMPLETED
-            parent = ProjectSerializer(validated_project, data=data, partial=True)
+                data['progress'] = _prog
+            parent = ProjectSerializer(project, data=data, partial=True)
+            print("PARENT",parent)
             parent.progress = parent.is_valid()
             parent.save(update_fields=['progress'])
 
         return new_task
+
+
+
+

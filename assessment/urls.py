@@ -1,3 +1,5 @@
+from collections import UserList
+
 from django.contrib import admin
 from django.urls import path, include
 
@@ -28,6 +30,7 @@ python client
 """
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("accounts/", include("django.contrib.auth.urls")),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('', include(manager_urls)),
 

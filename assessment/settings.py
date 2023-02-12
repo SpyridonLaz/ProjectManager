@@ -16,11 +16,12 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(os.path.abspath(__file__)).parent
 
-with Path(BASE_DIR.parent, '.oidc.key').open('rb') as f:
-    from Crypto.PublicKey import RSA
-
-    private_key = RSA.import_key(f.read())
-    os.environ['OIDC_RSA_PRIVATE_KEY'] = repr(private_key)
+# with Path(BASE_DIR.parent, '.oidc.key').open('rb') as f:
+#     from Crypto.PublicKey import RSA
+#
+#     private_key = RSA.import_key(f.read())
+#     os.environ['OIDC_RSA_PRIVATE_KEY'] = repr(private_key)
+#     print(config('OIDC_RSA_PRIVATE_KEY'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -36,14 +37,17 @@ LOGIN_URL = '/admin/login/'
 # Application definition
 
 INSTALLED_APPS = [
+
+    'sslserver',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'redis',
+    'assessment.users',
     'oauth2_provider',
+    'redis',
     'corsheaders',
     'rest_framework',
 
@@ -57,10 +61,11 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 
 )
-
 MIDDLEWARE = [
     # 'django.middleware.cache.UpdateCacheMiddleware',
     # keep the above first
+    'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -69,7 +74,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     # keep this last
     # 'django.middleware.cache.FetchFromCacheMiddleware',
 ]
@@ -97,32 +101,25 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    )
+
 }
 
-# OAUTH2_PROVIDER = {
-#     # this is the list of available scopes
-#     'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'},
-#     #"PKCE_REQUIRED": False
-#
-# }
+OIDC_RSA_PRIVATE_KEY = config("OIDC_RSA_PRIVATE_KEY")
 
 OAUTH2_PROVIDER = {
+    # "OAUTH2_VALIDATOR_CLASS": "assessment.oauth_validators.CustomOAuth2Validator",
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
     "OIDC_ENABLED": True,
-    "OIDC_RSA_PRIVATE_KEY": os.environ.get("OIDC_RSA_PRIVATE_KEY"),
+    "PKCE_REQUIRED": False, "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
     "ID_TOKEN_EXPIRE_SECONDS": 150,
     "SCOPES": {
         "openid": "OpenID Connect scope",
         'read': 'Read scope',
         'write': 'Write scope',
-        'groups': 'Access to your groups'
         # ... any other scopes that you use
     },
     # ... any other settings you want
 }
-OIDC_RSA_PRIVATE_KEY = config("OIDC_RSA_PRIVATE_KEY")
 
 WSGI_APPLICATION = 'assessment.wsgi.application'
 
@@ -199,7 +196,7 @@ CACHES = {
         }
     }
 }
-
+AUTH_USER_MODEL = 'users.User'
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 CACHE_TTL = 60 * 1

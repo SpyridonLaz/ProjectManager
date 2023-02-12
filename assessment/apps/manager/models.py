@@ -1,5 +1,6 @@
 
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import  Group
+from assessment.users.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -54,7 +55,7 @@ class Tag(models.Model):
     '''A tag will contain a name and will be used to group tasks project wide/global wide
 
     '''
-    name = models.CharField(max_length=40, unique=True)
+    name = models.CharField( max_length=40, unique=True)
 
     def __str__(self):
         return self.name
@@ -88,9 +89,13 @@ class Task(models.Model):
     # and conditions
     status = models.PositiveSmallIntegerField(choices=Status.choices,
                                               default=Status.IN_PROGRESS)
-    due_date = models.DateTimeField(null=False)
+    due_date = models.DateTimeField(null=False,)
     tags = models.ManyToManyField(Tag, related_name='tasks')
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["title", "project"], name='Unique Task title per project'),
+        ]
 
     def __str__(self):
         return self.title
@@ -100,7 +105,7 @@ class Task(models.Model):
         """
         Convenient property to use in permissions
         interchangeably with the owner attribute of
-        the parent Project!
+        the parent Project.
         """
         return self.project.owner
 
@@ -109,6 +114,6 @@ class Task(models.Model):
         """
         Convenient property to use in permissions
         interchangeably with the is_public attribute of
-        the parent Project!
+        the parent Project.
         """
         return self.project.is_public

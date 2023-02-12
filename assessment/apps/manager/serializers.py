@@ -49,22 +49,20 @@ class ProjectCUDSerializer(serializers.ModelSerializer):
 
 
 
-
-
-
-class TaskSerializer(serializers.ModelSerializer):
-
+class TaskCreateSerializer(serializers.ModelSerializer):
+    """Create"""
+    id = serializers.IntegerField(read_only=True)
     project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
     due_date = serializers.DateTimeField(validators=[IsFutureDateValidator(hours=1), ])
     progress = serializers.DecimalField(max_digits=3,
                                         decimal_places=2,
                                         validators=[MinValueValidator(0), MaxValueValidator(1)])
-    title = serializers.CharField(max_length=200,)
-
+    title = serializers.CharField(max_length=200, )
     tags =  serializers.SlugRelatedField(  slug_field="name", many=True, queryset=Tag.objects.all()  )
+    status = serializers.ChoiceField(choices=Status.choices, default=Status.IN_PROGRESS,allow_blank=True)
 
     class Meta:
-        depth = 2
+        depth = 1
         model = Task
         validators = [
             serializers.UniqueTogetherValidator(
@@ -72,73 +70,61 @@ class TaskSerializer(serializers.ModelSerializer):
                 fields=('title', 'project'),
             )
         ]
-        fields = ('project','title','tags','progress', 'description',
-                   'due_date', )
-        read_only_fields = ['id','project']
+        fields = ('id','project','title','tags','progress', 'description',
+                   'due_date','status' )
 
-
-
-    def validate_due_date(self, value):
-
+    def validate_due_date(self, value:datetime):
         LessThanParentDueDateValidator(value, self.context.get('parent'))
-        return value
 
+        return value
 
     def to_internal_value(self, data):
         """
-        This method is used to create tags if they don't exist.
-        The format is a list of strings(tags)
+        We create tags if they don't exist
+        so that we can create many to many relationships
+        on the fly.
         """
+        data['tags'] = [Tag.objects.get_or_create(name=tag)[0] for tag in data.get('tags', [])]
+        return super(TaskCreateSerializer, self).to_internal_value(data)
 
-        print("START")
-        #self.parent_obj = self.context.get('parent')
 
-        raw_tags = data.get('tags', [])
-        print("RAW",raw_tags)
-        _t = []
-        for tag in raw_tags:
-            print("TAG",tag)
-            try:
-                _t.append(Tag.objects.get_or_create(name=tag)[0])
-            except Exception as e:
-                raise ValidationError({'detail': "Tag PARSER PROBLEM"})
-        data['tags'] = _t
-        print(data['tags'])
-        print("DATA",data)
-        return super(TaskSerializer, self).to_internal_value(data)
+class TaskUpdateSerializer(TaskCreateSerializer):
+    """Update"""
+    class Meta:
+        model = Task
+
+        fields = ('tags','progress', 'description',
+                   'due_date', 'status' )
+        read_only_fields = ['id','project']
 
     def update(self, instance, validated_data):
-
-        # validated_data['tags'] =  [Tag.objects.get_or_create(name=tag)[0] for tag in validated_data.get('tags', [])]
-        print("validated_data",validated_data)
-
-        print("validated_data",validated_data)
         project =  instance.project
-
-
-        new_task =super().update(instance,validated_data,)
+        task = super().update(instance, validated_data, )
         if validated_data['progress'] == 1:
-            print("VALIDATED:  ",project)
             """
-            If the task is completed, the parent project: progress , status
+            If the task is completed, then task's status is updated and 
+            also the parent project: progress , status
             fields are updated accordingly
             """
-            validated_data['status'] = Status.COMPLETED
+            validated_data['status'] = Status.COMPLETED.value
+            task= super().update(task, validated_data, )
+
+            # calculating the progress of the parent project
             completed_tasks = Task.objects.filter(project=project,progress__exact=1).count()
             total_tasks = Task.objects.filter(project=project).count()
-            _prog =  round(completed_tasks+1/total_tasks,2,)
-            print("PROGRESS",_prog)
-            data={}
+            _prog =  round(completed_tasks/total_tasks,2,)
+
+            data = {}
             if _prog == 1:
-                data['status'] = Status.COMPLETED
-                data['progress'] = _prog
+            # if all tasks are completed, then the project status becomes completed
+
+                data['status'] = Status.COMPLETED.value
+            # updating progress,status of parent project
+            data['progress'] = _prog
             parent = ProjectSerializer(project, data=data, partial=True)
-            print("PARENT",parent)
             parent.progress = parent.is_valid()
-            parent.save(update_fields=['progress'])
+            parent.save(update_fields=['progress','status'])
 
-        return new_task
-
-
+        return task
 
 

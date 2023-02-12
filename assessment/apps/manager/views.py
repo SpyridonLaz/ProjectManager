@@ -7,9 +7,10 @@ from rest_framework.response import Response
 from rest_framework.viewsets import  ModelViewSet
 
 from assessment import settings
-from assessment.apps.manager.models import Project, Task
-from assessment.apps.manager.permissions import IsOwner, IsPublic, ObjectStatus, TaskNotExpired, ProjectNotExpired
-from assessment.apps.manager.serializers import ProjectSerializer, TaskSerializer, ProjectCUDSerializer
+from assessment.apps.manager.models import Project, Task, Status
+from assessment.apps.manager.permissions import IsOwner, IsPublic, TaskNotExpired, ProjectNotExpired,   ProjectStatus, TaskStatus
+from assessment.apps.manager.serializers import ProjectSerializer, ProjectCUDSerializer, \
+    TaskCreateSerializer, TaskUpdateSerializer
 from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
 
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
@@ -27,8 +28,6 @@ class ProjectViewSet(ModelViewSet):
             return ProjectSerializer
         return ProjectCUDSerializer
 
-
-
     @method_decorator(cache_page(CACHE_TTL))
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
@@ -38,7 +37,7 @@ class ProjectViewSet(ModelViewSet):
         if self.request.method in SAFE_METHODS:
             self.permission_classes += [IsPublic | IsOwner, ]
         else:
-            self.permission_classes += [IsOwner,ProjectNotExpired, ObjectStatus ]
+            self.permission_classes += [IsOwner,ProjectStatus  ,ProjectNotExpired , ]
         return super(ProjectViewSet, self).get_permissions()
 
 
@@ -67,21 +66,17 @@ class TaskViewSet(ModelViewSet):
                 _task_id =  self.kwargs['pk']
                 _project = Task.objects.get(id=_task_id).project
             context['parent'] = _project
-
         return context
 
-
     def get_serializer_class(self):
-        if self.action == SAFE_METHODS:
-            return TaskSerializer
-        return TaskSerializer
-
-
+        return TaskUpdateSerializer if self.action in ['update', ['partial_update']] else TaskCreateSerializer
 
     def get_permissions(self):
         self.permission_classes = [IsAuthenticated, TokenHasReadWriteScope]
         if self.request.method in SAFE_METHODS:
             self.permission_classes += [IsPublic | IsOwner, ]
         else:
-            self.permission_classes += [IsOwner, ObjectStatus,TaskNotExpired ]
+            self.permission_classes += [IsOwner, TaskStatus,TaskNotExpired ]
         return super(TaskViewSet, self).get_permissions()
+
+

@@ -41,11 +41,9 @@ class LessThanParentDueDateValidator:
     message = {"detail": "Task's due date cannot be greater than it's Project due date."}
 
     def __init__(self, instance:datetime, parent:Project):
-        self.instance = instance
-        self.parent = parent
-        print(self.instance, self.parent.due_date)
-        print("DATE",self.instance , self.parent.due_date.month )
+
         if instance > parent.due_date:
+            self.message['max_value'] = parent.due_date.isoformat()
             raise ValidationError(detail=self.message)
 
 class OutOfTimeRangeValidator(IsFutureDateValidator):
@@ -76,7 +74,7 @@ class OutOfTimeRangeValidator(IsFutureDateValidator):
 
         dT = value.timestamp()
         dt2 = self.instance.due_date.timestamp()
-        if self.dt_min < dT < dt2:
+        if self.dt_min <= dT <= dt2:
             raise ValidationError(self.message)
 
 
@@ -94,9 +92,4 @@ class UniqueTitlePerProjectValidator:
                     'detail': 'Title must be unique per project.',
                     'invalid_field': title}
             )
-
-
-class testUTV(UniqueTogetherValidator):
-    def __init__(self, queryset, fields, message=None):
-        super().__init__(queryset, fields, message=None)
 

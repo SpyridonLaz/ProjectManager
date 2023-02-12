@@ -88,7 +88,7 @@ class Task(models.Model):
     # and conditions
     status = models.PositiveSmallIntegerField(choices=Status.choices,
                                               default=Status.IN_PROGRESS)
-    due_date = models.DateTimeField(null=False)
+    due_date = models.DateTimeField(null=False,)
     tags = models.ManyToManyField(Tag, related_name='tasks')
 
     class Meta:

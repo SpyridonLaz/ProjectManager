@@ -37,7 +37,6 @@ LOGIN_URL = '/admin/login/'
 # Application definition
 
 INSTALLED_APPS = [
-    'oauth2_provider',
 
     'sslserver',
     'django.contrib.admin',
@@ -46,6 +45,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'assessment.users',
+    'oauth2_provider',
     'redis',
     'corsheaders',
     'rest_framework',
@@ -60,10 +61,11 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 
 )
-
 MIDDLEWARE = [
     # 'django.middleware.cache.UpdateCacheMiddleware',
     # keep the above first
+    'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -72,7 +74,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     # keep this last
     # 'django.middleware.cache.FetchFromCacheMiddleware',
 ]
@@ -100,17 +101,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    )
+
 }
 
 OIDC_RSA_PRIVATE_KEY = config("OIDC_RSA_PRIVATE_KEY")
 
 OAUTH2_PROVIDER = {
+    # "OAUTH2_VALIDATOR_CLASS": "assessment.oauth_validators.CustomOAuth2Validator",
     "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
     "OIDC_ENABLED": True,
-    "PKCE_REQUIRED": False,    "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
+    "PKCE_REQUIRED": False, "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
     "ID_TOKEN_EXPIRE_SECONDS": 150,
     "SCOPES": {
         "openid": "OpenID Connect scope",
@@ -196,7 +196,7 @@ CACHES = {
         }
     }
 }
-
+AUTH_USER_MODEL = 'users.User'
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 CACHE_TTL = 60 * 1

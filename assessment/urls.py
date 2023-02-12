@@ -1,3 +1,5 @@
+from collections import UserList
+
 from django.contrib import admin
 from django.urls import path, include
 

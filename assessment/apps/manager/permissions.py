@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-
-from assessment.apps.manager.models import Status, Project, Task
+from rest_framework.permissions import IsAuthenticated
+from assessment.apps.manager.models import Status
 
 
 class IsOwner(IsAuthenticated):
@@ -72,7 +71,7 @@ class TaskNotExpired(ProjectNotExpired):
     Permission that checks if the object (and it's parent object)
     has expired.
     """
-    def has_object_permission(self, request, view, obj: Task):
+    def has_object_permission(self, request, view, obj):
         project_expires =   super().has_object_permission(request, view, obj.project)
         task_expires = super().has_object_permission(request, view, obj)
         print("PERMIT STATUS: ", project_expires and task_expires)

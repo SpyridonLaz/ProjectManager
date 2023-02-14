@@ -129,7 +129,7 @@ class TaskUpdateSerializer(TaskSerializer):
             fields are updated accordingly
             """
             validated_data['status'] = Status.COMPLETED.value
-            task = super().update(updated_task, validated_data, )
+            updated_task = super().update(updated_task, validated_data, )
 
             # calculating the progress of the parent project
             completed_tasks = Task.objects.filter(project=project, progress__exact=1).count()

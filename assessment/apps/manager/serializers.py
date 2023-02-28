@@ -19,21 +19,18 @@ class AbstractSerializer(serializers.ModelSerializer):
     description = serializers.CharField(max_length=500, allow_blank=True)
     status = serializers.ChoiceField(choices=Status.choices, default=Status.IN_PROGRESS, allow_blank=True)
     due_date = serializers.DateTimeField(validators=[IsFutureDateValidator(), ])
-
-    class Meta:
-        abstract = True
-    def validate_due_date(self, value: datetime):
-        LessThanParentDueDateValidator(value, self.context.get('parent'))
-        return value
-
-
-class ProjectSerializer(serializers.ModelSerializer):
-    """list, retrieve,create,"""
-    owner = serializers.PrimaryKeyRelatedField(read_only=True)
-    due_date = serializers.DateTimeField(validators=[IsFutureDateValidator(), ])
     progress = serializers.DecimalField(max_digits=3,
                                         decimal_places=2,
                                         validators=[MinValueValidator(0), MaxValueValidator(1)])
+    class Meta:
+        abstract = True
+    
+
+
+class ProjectSerializer(AbstractSerializer):
+    """list, retrieve,create,"""
+    owner = serializers.PrimaryKeyRelatedField(read_only=True)
+    
     title = serializers.CharField(max_length=200,
                                   validators=[UniqueValidator(queryset=Project.objects.all(), ), ])
     is_public = serializers.BooleanField(default=False)
@@ -49,10 +46,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class ProjectUpdateSerializer(serializers.ModelSerializer):
     """Update, partial_update"""
-    progress = serializers.DecimalField(max_digits=3,
-                                        decimal_places=2,
-                                        validators=[MinValueValidator(0),
-                                                    MaxValueValidator(1)])
+    
     class Meta:
         model = Project
         fields = ['description', 'due_date',
@@ -78,12 +72,10 @@ class TaskSerializer(AbstractSerializer):
     """list, retrieve,create,"""
     id = serializers.IntegerField(read_only=True)
     project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
-    progress = serializers.DecimalField(max_digits=3,
-                                        decimal_places=2,
-                                        validators=[MinValueValidator(0), MaxValueValidator(1)])
+ 
+
     title = serializers.CharField(max_length=200, )
     tags = serializers.SlugRelatedField(slug_field="name", many=True, queryset=Tag.objects.all())
-    status = serializers.ChoiceField(choices=Status.choices, default=Status.IN_PROGRESS, allow_blank=True)
 
     class Meta:
         depth = 1
@@ -129,7 +121,7 @@ class TaskUpdateSerializer(TaskSerializer):
             fields are updated accordingly
             """
             validated_data['status'] = Status.COMPLETED.value
-            task = super().update(updated_task, validated_data, )
+            updated_task = super().update(updated_task, validated_data, )
 
             # calculating the progress of the parent project
             completed_tasks = Task.objects.filter(project=project, progress__exact=1).count()
